@@ -2,3 +2,4 @@
 venv/
 *.pyc
 key.py
+memory.txt
