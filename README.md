@@ -1,2 +1,2 @@
-# Julia
-Julia - realistic girl bot in telegram
+# Yulia
+Yulia - realistic girl bot in telegram
