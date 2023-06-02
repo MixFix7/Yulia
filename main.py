@@ -1,6 +1,7 @@
 import openai
+import requests
 import sqlite3
-from key import openai_key
+from key import openai_key, description_yulia
 from gpytranslate import SyncTranslator
 
 t = SyncTranslator()
@@ -14,19 +15,32 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS ChatWithYulia
                 name TEXT NOT NULL, 
                 message TEXT NOT NULL)''')
 
+
 openai.api_key = openai_key
 
 
-def Yulia_Bot(history):
+def Yulia_Bot2(prompt):
+    url = f"https://api.openai.com/v1/models/text-davinci-003/{openai_key}/"
+    message = requests.request("POST", url)
+
+def Yulia_Bot(prompt):
+
+    chat_history = [
+        {'role': "system", "content": description_yulia},
+        {'role': "user", "content": ""},
+        {'role': "Yulia", "content": prompt}
+    ]
+
+
     response = openai.Completion.create(
         model="text-davinci-003",
-        prompt=history,
+        prompt=chat_history,
         temperature=0.25,
         max_tokens=1000,
         top_p=1.0,
         frequency_penalty=0.5,
         presence_penalty=0.0,
-        stop=[" Lubomyr:", " Yulia:"]
+        stop=[ "Lubomyr:", " Yulia:"]
     )
     ai_answer = response['choices'][0]['text']
     return ai_answer
@@ -40,7 +54,7 @@ while True:
 
     cursor.execute("INSERT INTO ChatWithYulia (name, message) VALUES (?, ?)", ('Lubomyr', user_message))
 
-    if user_message == "exit":
+    if user_message == "exit()":
         conn.close()
         break
 
