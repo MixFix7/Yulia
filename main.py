@@ -1,71 +1,26 @@
-import openai
-import requests
-import sqlite3
-from key import openai_key, description_yulia
+"""create file key.py and make this imported arrays in it"""
+from key import api_key, telegram_key, yulia_prompt # you can customize Yulia, just write prompt who you need in array "yulia_prompt"
 from gpytranslate import SyncTranslator
+from aiogram import Bot, types
+from aiogram.dispatcher import Dispatcher
+from aiogram.utils import executor
+from Yulia import dialog_with_yulia
 
-t = SyncTranslator()
-
-conn = sqlite3.connect('yulia.db')
-
-cursor = conn.cursor()
-
-cursor.execute('''CREATE TABLE IF NOT EXISTS ChatWithYulia
-                (id INTEGER PRIMARY KEY, 
-                name TEXT NOT NULL, 
-                message TEXT NOT NULL)''')
+bot = Bot(telegram_key)
+dp = Dispatcher(bot)
 
 
-openai.api_key = openai_key
+@dp.message_handler()
+async def send(message: types.Message):
+    username = message.from_user.username
+    if message.text == "Clear":
+        with open('memory.txt', 'w') as f:
+            f.write(yulia_prompt)
+    elif message.text == "/start":
+        pass
+    else:
+        yulia_message = dialog_with_yulia(message.text, username)
+        await message.answer(yulia_message)
 
 
-def Yulia_Bot(prompt):
-
-    response = openai.Completion.create(
-        model="text-davinci-003",
-        prompt=prompt,
-        temperature=0.25,
-        max_tokens=1000,
-        top_p=1.0,
-        frequency_penalty=0.5,
-        presence_penalty=0.0,
-        stop=["Lubomyr:", "Yulia:"]
-    )
-    return response["choices"][0]["text"]
-
-
-
-
-
-while True:
-
-    user_message = input("> ")
-
-    if user_message == "exit()":
-        conn.close()
-        break
-
-    cursor.execute("INSERT INTO ChatWithYulia (name, message) VALUES (?, ?)", ('Lubomyr', user_message))
-
-    all_messages_human = cursor.execute("SELECT * FROM ChatWithYulia WHERE name = 'Lubomyr' ")
-    all_messages_Yulia = cursor.execute("SELECT * FROM ChatWithYulia WHERE name = 'Yulia' ")
-
-    print(all_messages_human.description, all_messages_Yulia)
-
-
-    with open("memory.txt", 'a') as f:
-        f.write(f"\nLubomyr: {user_message}")
-
-    with open("memory.txt", 'r') as f:
-        memory = f.read()
-
-    Yulia_message = Yulia_Bot(memory)
-
-    cursor.execute("INSERT INTO ChatWithYulia (name, message) VALUES (?, ?)", ('Yulia', Yulia_message))
-
-    conn.commit()
-
-    with open("memory.txt", 'a') as f:
-         f.write(f"\n{Yulia_message}")
-
-    print(f"\n{Yulia_message}")
+executor.start_polling(dp, skip_updates=True)
